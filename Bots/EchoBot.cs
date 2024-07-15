@@ -6,22 +6,21 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
+using DeepL;
 
 namespace EchoBot.Bots
 {
     public class EchoBot : ActivityHandler
     {
         private ChatClient _client;
-
+        private readonly ITranslator _translator;
         public EchoBot(IConfiguration configuration)
         {
             // var endpoint = new Uri(configuration["Endpoint"]);
-            string nonAzureOpenAIApiKey = configuration["OpenAIApiKey"];
-            // _deploymentId = configuration["DeploymentId"];
-            // ChatClient client = new(model: "gpt-4o", Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
-            _client = new(model: "gpt-4o", nonAzureOpenAIApiKey);
+            _client = new(model: "gpt-4o", configuration["OpenAIApiKey"]);
             
-            // _openAIClient = new OpenAIClient(nonAzureOpenAIApiKey,new OpenAIClientOptions());
+            _translator = new Translator(configuration["DeepLApiKey"]);
+
         }
 
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
@@ -29,26 +28,18 @@ namespace EchoBot.Bots
             var userMessage = turnContext.Activity.Text;
 
             try
-            {
-                ChatCompletion completion = await _client.CompleteChatAsync(userMessage);
-                // Response<ChatCompletions> response = await _openAIClient.GetChatCompletionsAsync(new ChatCompletionsOptions()
-                // {
-                //     DeploymentName = "gpt-3.5-turbo", // assumes a matching model deployment or model name
-                //     Messages =
-                //     {
-                //         new ChatRequestSystemMessage("あなたはアシスタントです。ユーザーからの質問に答えてください。"),
-                //         new ChatRequestUserMessage( userMessage ),
-                //     }
-                // });
-                
-                // var replyText = response.Value.ToString().ToUpperInvariant();
-                // var replyText = completion;
+            {   
 
-                // ChatResponseMessage responseMessage = response.Value.Choices[0].Message;
-                // Console.WriteLine($"[{responseMessage.Role.ToString().ToUpperInvariant()}]: {responseMessage.Content}");
-                
-                // Console.WriteLine(replyText);
-                // Console.WriteLine(response);
+                // Translate text into a target language, in this case, French:
+                var translatedText = await _translator.TranslateTextAsync(
+                    userMessage,
+                    null,
+                    "en-US"
+                    );
+
+                await turnContext.SendActivityAsync(MessageFactory.Text($"[Accepted]:{translatedText}"), cancellationToken);
+
+                ChatCompletion completion = await _client.CompleteChatAsync($"{translatedText}");
 
                 await turnContext.SendActivityAsync(MessageFactory.Text($"{completion}"), cancellationToken);
             }
@@ -57,14 +48,11 @@ namespace EchoBot.Bots
                 await turnContext.SendActivityAsync(MessageFactory.Text("Sorry, something went wrong."), cancellationToken);
             }
 
-
-            // // Optional: Log the conversation
-            // await LogConversation(turnContext, userMessage, replyText);
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
-            var welcomeText = "私はAIアシスタントです。";
+            var welcomeText = "I am an AI assistant.";
             foreach (var member in membersAdded)
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
@@ -73,13 +61,5 @@ namespace EchoBot.Bots
                 }
             }
         }
-
-        // private async Task LogConversation(ITurnContext<IMessageActivity> turnContext, string userMessage, string botReply)
-        // {
-        //     // Implement your logging logic here
-        //     // Example: Log to a database or a file
-        //     var logMessage = $"User: {userMessage}\nBot: {botReply}\nTimestamp: {DateTime.UtcNow}\n";
-        //     Console.WriteLine(logMessage);
-        // }
     }
 }
