@@ -17,7 +17,7 @@ namespace EchoBot.Bots
         public EchoBot(IConfiguration configuration)
         {
             // var endpoint = new Uri(configuration["Endpoint"]);
-            _client = new(model: "gpt-4o", configuration["OpenAIApiKey"]);
+            _client = new(model: "gpt-4o-mini", configuration["OpenAIApiKey"]);
             
             _translator = new Translator(configuration["DeepLApiKey"]);
 
