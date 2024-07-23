@@ -108,7 +108,6 @@ namespace EchoBot.Bots
                     }
                 );
 
-                // string chatCompletion = "test";
 
 
                 await turnContext.SendActivityAsync(MessageFactory.Text($"{chatCompletion}"), cancellationToken);
