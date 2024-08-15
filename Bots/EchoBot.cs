@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Bot.Builder.Azure.Blobs;
 using DeepL;
 
 namespace EchoBot.Bots
@@ -21,6 +22,8 @@ namespace EchoBot.Bots
         private BotState _userState;
         public List<ChatMessage> conversationMessages = new List<ChatMessage>();
         private string DeploymentModel = "gpt-4o-mini";
+        private string BlobConnectionString = "";
+        private string BlobContainerName = "";
         public class MessageStorage
         {
             public string UserMessage { get; set; }  
@@ -43,7 +46,10 @@ namespace EchoBot.Bots
             _userState = userState;
 
             if (storage is null) throw new ArgumentNullException();
-            _myStorage = storage;
+            // _myStorage = storage;
+            BlobConnectionString = configuration["BlobConnectionString"];
+            BlobContainerName = configuration["BlobContainerName"];
+            _myStorage = new BlobsStorage(BlobConnectionString,BlobContainerName);
 
             TimeStamp = DateTime.Now.ToString("yyyyMMddHHmmss");
 
@@ -138,7 +144,7 @@ namespace EchoBot.Bots
                 logItems.UserMessage = userMessage;
                 logItems.AssistantMessage = $"{chatCompletion}" ;
                 logItems.UserName = userProfile.Name;
-                logItems.Model = DeploymentModel;
+                logItems.Model = DeploymentModel;              
                 // Create Dictionary object to hold new list of messages.
                 var changes = new Dictionary<string, object>();
                 {
