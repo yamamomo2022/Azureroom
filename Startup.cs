@@ -8,6 +8,7 @@ using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Bot.Builder.Azure.Blobs;
 
 namespace EchoBot
 {
@@ -42,6 +43,12 @@ namespace EchoBot
             services.AddSingleton(conversationState);
             var userState = new UserState(storage);
             services.AddSingleton(userState);
+
+            services.AddSingleton<IStorage>(
+                new BlobsStorage(
+                    Configuration.GetValue<string>("BlobConnectionString"),
+                    Configuration.GetValue<string>("BlobContainerName")
+                    ));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
