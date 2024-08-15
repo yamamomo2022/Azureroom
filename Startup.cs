@@ -46,8 +46,8 @@ namespace EchoBot
 
             services.AddSingleton<IStorage>(
                 new BlobsStorage(
-                    Configuration.GetValue<string>("BlobConnectionString"),
-                    Configuration.GetValue<string>("BlobContainerName")
+                    Configuration["BlobConnectionString"],
+                    Configuration["BlobContainerName"]
                     ));
         }
 
