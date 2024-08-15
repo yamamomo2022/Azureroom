@@ -12,16 +12,28 @@ namespace EchoBot.Bots
 {
     public class EchoBot : ActivityHandler
     {
+        private readonly IStorage _myStorage;
+        private string TimeStamp { get; set; }
+        public CancellationToken cancellationToken { get; private set; }
         private ChatClient _client;
         private readonly ITranslator _translator;
         private BotState _dialogueState;
         private BotState _userState;
         public List<ChatMessage> conversationMessages = new List<ChatMessage>();
+        private string DeploymentModel = "gpt-4o-mini";
+        public class MessageStorage
+        {
+            public string UserMessage { get; set; }  
+            public string AssistantMessage { get; set; }
+            public string UserName { get; set; }
+            public string Model { get; set; }
+        }
 
-        public EchoBot(IConfiguration configuration,ConversationState conversationState, UserState userState)
+        public EchoBot(IConfiguration configuration,ConversationState conversationState, UserState userState, IStorage storage)
         {
             // var endpoint = new Uri(configuration["Endpoint"]);
-            _client = new(model: "gpt-4o-mini", configuration["OpenAIApiKey"]);
+             
+            _client = new(model: DeploymentModel, configuration["OpenAIApiKey"]);
             
             // DeepL
             _translator = new Translator(configuration["DeepLApiKey"]);
@@ -29,6 +41,12 @@ namespace EchoBot.Bots
             // dialogue 
             _dialogueState = conversationState;
             _userState = userState;
+
+            if (storage is null) throw new ArgumentNullException();
+            _myStorage = storage;
+
+            TimeStamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+
         }
 
           public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
@@ -114,6 +132,29 @@ namespace EchoBot.Bots
                 
                 conversationMessages.Add(new AssistantChatMessage ($"{chatCompletion}"));
                 GenAIMessages.Add(new genAIMessage { Role = "assistant", Content = $"{chatCompletion}" });
+                
+                // Make empty local log-items list.
+                MessageStorage logItems = new MessageStorage();
+                logItems.UserMessage = userMessage;
+                logItems.AssistantMessage = $"{chatCompletion}" ;
+                logItems.UserName = userProfile.Name;
+                logItems.Model = DeploymentModel;
+                // Create Dictionary object to hold new list of messages.
+                var changes = new Dictionary<string, object>();
+                {
+                    changes.Add($"Chat_history_{TimeStamp}.json", logItems);
+                };
+
+                try
+                {
+                    // Save new list to your Storage.
+                    await _myStorage.WriteAsync(changes,cancellationToken);
+                }
+                catch
+                {
+                    // Inform the user an error occurred.
+                    await turnContext.SendActivityAsync("Sorry, something went wrong storing your message!");
+                }
 
             }
             catch (Exception)
