@@ -9,6 +9,7 @@
     <PackageReference Include="Azure.AI.OpenAI" Version="2.0.0-beta.2" />
     <PackageReference Include="DeepL.net" Version="1.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Bot.Builder.Azure" Version="4.22.0" />
     <PackageReference Include="Microsoft.Bot.Builder.Azure.Blobs" Version="4.22.0" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.22.0" />
     <PackageReference Include="OpenAI" Version="2.0.0-beta.7" />

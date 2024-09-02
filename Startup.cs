@@ -8,7 +8,8 @@ using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Bot.Builder.Azure.Blobs;
+using Microsoft.Bot.Builder.Azure;
+
 
 namespace EchoBot
 {
@@ -44,11 +45,17 @@ namespace EchoBot
             var userState = new UserState(storage);
             services.AddSingleton(userState);
 
+            // Use partitioned CosmosDB for storage, instead of in-memory storage.
             services.AddSingleton<IStorage>(
-                new BlobsStorage(
-                    Configuration["BlobConnectionString"],
-                    Configuration["BlobContainerName"]
-                    ));
+                new CosmosDbPartitionedStorage(
+                    new CosmosDbPartitionedStorageOptions
+                    {
+                        CosmosDbEndpoint = Configuration.GetValue<string>("CosmosDbEndpoint"),
+                        AuthKey = Configuration.GetValue<string>("CosmosDbAuthKey"),
+                        DatabaseId = Configuration.GetValue<string>("CosmosDbDatabaseId"),
+                        ContainerId = Configuration.GetValue<string>("CosmosDbContainerId"),
+                        CompatibilityMode = false,
+                    }));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
